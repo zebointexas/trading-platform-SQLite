@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币交易平台</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录页面 -->
+        <div id="loginPage">
+            <h2>登录</h2>
+            <input type="text" id="username" placeholder="用户名"><br>
+            <input type="password" id="password" placeholder="密码"><br>
+            <button onclick="login()">登录</button>
+        </div>
+
+        <!-- 主页面 -->
+        <div id="mainPage" class="hidden">
+            <h2>欢迎，<span id="userNameDisplay"></span>！</h2>
+            <button onclick="logout()">退出登录</button>
+
+            <!-- 获取市场价格 -->
+            <h3>市场价格</h3>
+            <input type="text" id="pair" placeholder="交易对（如BTCUSD）">
+            <button onclick="getPrice()">获取价格</button>
+            <p id="priceResult"></p>
+
+            <!-- 获取钱包余额 -->
+            <h3>钱包余额</h3>
+            <input type="text" id="currency" placeholder="货币（如BTC）">
+            <button onclick="getBalance()">获取余额</button>
+            <p id="balanceResult"></p>
+        </div>
+    </div>
+
+    <script>
+        let token = null; // 存储登录后返回的 token
+
+        // 登录函数
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    token = data.token; // 保存 token
+                    document.getElementById('userNameDisplay').innerText = username;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('mainPage').classList.remove('hidden');
+                } else {
+                    alert('登录失败：' + data.message);
+                }
+            } catch (error) {
+                alert('登录出错：' + error.message);
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            token = null;
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('mainPage').classList.add('hidden');
+        }
+
+        // 获取市场价格
+        async function getPrice() {
+            const pair = document.getElementById('pair').value;
+            try {
+                const response = await fetch(`http://localhost:8080/api/market/price/${pair}`, {
+                    method: 'GET',
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('priceResult').innerText = `价格：${data.price}`;
+                } else {
+                    document.getElementById('priceResult').innerText = '获取价格失败：' + data.message;
+                }
+            } catch (error) {
+                document.getElementById('priceResult').innerText = '出错：' + error.message;
+            }
+        }
+
+        // 获取钱包余额
+        async function getBalance() {
+            const currency = document.getElementById('currency').value;
+            try {
+                const response = await fetch(`http://localhost:8080/api/wallet/balance/${currency}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`, // 带上 token
+                    },
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('balanceResult').innerText = `余额：${data.balance} ${currency}`;
+                } else {
+                    document.getElementById('balanceResult').innerText = '获取余额失败：' + data.message;
+                }
+            } catch (error) {
+                document.getElementById('balanceResult').innerText = '出错：' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

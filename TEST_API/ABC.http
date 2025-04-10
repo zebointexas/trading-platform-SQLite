@@ -1,0 +1,20 @@
+# POST http://localhost:8888/api/user/register
+# Content-Type: application/json
+
+# {
+#     "username": "testusesdfsdfssssdfsr",
+#     "password": "password12sdfssssdsf3",
+#     "email": "testuser@examssple.com"
+# }
+
+
+
+
+GET http://localhost:8888/api/market/price/BTCUSD
+Content-Type: application/json
+
+{
+
+}
+
+

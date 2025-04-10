@@ -1,0 +1,17 @@
+Name: crypto-trading-platform
+
+RestConf:
+  Host: 0.0.0.0
+  Port: 8888
+  Name: crypto-trading-platform
+
+Database:
+  Path: ./data/crypto.db
+
+Kraken:
+  APIKey: TDqo1DszYm8AYt5kBsDHPX+PoWtNbwvm/OK7MWIuXzq+GQd80mu+LLeC
+  APISecret: 5Px/4JwKNiB/GnFWCszZ6vplThFMwQiRODGcZ5Z2MJwAwlN0U2ifOOlAGAZEQE+VmDpmv43Sc2GwuX1TDuBGtg==
+
+Auth:
+  AccessSecret: kX9mPq2xWvT4rYcL8nD6hS0jU7kE9iB2aM5gN4pQ7wR
+  AccessExpire: 86400

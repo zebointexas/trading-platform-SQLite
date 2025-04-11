@@ -3,6 +3,7 @@ package api
 import (
 	"crypto-trading-platform/service"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -160,6 +161,9 @@ func (h *Handler) GetUserWallets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Printf("----------------------   00001 ")
+
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
 		fail(w, 401, "Unauthorized")
@@ -188,6 +192,8 @@ func (h *Handler) SyncWalletBalances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("------------------------   000")
+
 	err = h.walletService.SyncWalletBalances(userID)
 	if err != nil {
 		fail(w, 500, "Failed to sync balances: "+err.Error())
@@ -197,15 +203,22 @@ func (h *Handler) SyncWalletBalances(w http.ResponseWriter, r *http.Request) {
 	success(w, nil)
 }
 
+type PriceRequest struct {
+	Pair string `path:"pair"`
+}
+
 func (h *Handler) GetPrice(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the 'pair' path parameter using Go-Zero's helper
-	pair := httpx.GetPathParam(r, "pair")
-	if pair == "" {
+	var req PriceRequest
+	if err := httpx.ParsePath(r, &req); err != nil {
+		fail(w, 400, "Failed to parse path: "+err.Error())
+		return
+	}
+	if req.Pair == "" {
 		fail(w, 400, "Pair is required")
 		return
 	}
 
-	price, err := h.tradingService.GetPrice(pair)
+	price, err := h.tradingService.GetPrice(req.Pair)
 	if err != nil {
 		fail(w, 500, "Failed to get price: "+err.Error())
 		return

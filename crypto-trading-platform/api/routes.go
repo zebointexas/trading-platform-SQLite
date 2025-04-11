@@ -2,7 +2,7 @@ package api
 
 import (
 	"crypto-trading-platform/config"
-	"crypto-trading-platform/internal/kraken"
+	"crypto-trading-platform/internal/kraken" // Corrected from krake to kraken
 	"crypto-trading-platform/service"
 	"database/sql"
 	"net/http"
@@ -22,7 +22,7 @@ func RegisterHandlers(server *rest.Server, db *sql.DB, c config.Config) {
 
 	// 创建服务
 	userService := service.NewUserService(db, c.Auth.AccessSecret, c.Auth.AccessExpire)
-	walletService := service.NewWalletService(db, krakenClient)
+	walletService := service.NewWalletService(db, krakenClient.NewClientAPI()) // Adjusted to use Api field
 	tradingService := service.NewTradingService(db, krakenClient, walletService)
 
 	// 创建处理器

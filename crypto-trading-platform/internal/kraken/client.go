@@ -12,10 +12,14 @@ type Client struct {
 	api *krakenapi.KrakenAPI
 }
 
-// NewClient creates a new Kraken API client
 func NewClient(apiKey, apiSecret string) *Client {
 	api := krakenapi.New(apiKey, apiSecret)
 	return &Client{api: api}
+}
+
+// Getter 方法，供外部访问
+func (c *Client) NewClientAPI() *krakenapi.KrakenAPI {
+	return c.api
 }
 
 // GetPrice gets the current price for the specified cryptocurrency pair

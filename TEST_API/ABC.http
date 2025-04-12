@@ -1,20 +1,42 @@
-# POST http://localhost:8888/api/user/register
-# Content-Type: application/json
-
-# {
-#     "username": "testusesdfsdfssssdfsr",
-#     "password": "password12sdfssssdsf3",
-#     "email": "testuser@examssple.com"
-# }
-
-
-
-
-GET http://localhost:8888/api/market/price/BTCUSD
+### Register
+POST /api/user/register HTTP/1.1
+Host: localhost:8888
 Content-Type: application/json
 
 {
-
+    "username": "testusesdfsdfssssdsdfsdfsr",
+    "password": "password12sdfsssdfsdssdsf3",
+    "email": "testuser@examsssple.com"
 }
 
+### Market Price
+GET /api/market/price/XXBTZUSD HTTP/1.1
+Host: localhost:8888
 
+### Wallet Balance
+GET /api/wallet/balance/BTC HTTP/1.1
+Host: localhost:8888
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ1Mjc0ODIsImlhdCI6MTc0NDQ0MTA4MiwidXNlcklkIjo2fQ.7HmuHHSnEq4rS9D4-vLGg7AF3rCQEgMZMdkSglKQcy4
+
+
+
+
+
+
+"XETHXXBT": {
+      "altname": "ETHXBT",
+      "wsname": "ETH/XBT",
+      "base": "XETH",
+      "quote": "XXBT"
+    },
+    "XXBTZUSD": {
+      "altname": "XBTUSD",
+      "wsname": "XBT/USD",
+      "base": "XXBT",
+      "quote": "ZUSD"
+    },
+    "XETHZUSD": {
+      "altname": "ETHUSD",
+      "wsname": "ETH/USD",
+      "base": "XETH",
+      "quote": "ZUSD"

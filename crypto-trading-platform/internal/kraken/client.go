@@ -2,8 +2,11 @@ package kraken
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
+
+	"time"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
 )
@@ -22,22 +25,57 @@ func (c *Client) NewClientAPI() *krakenapi.KrakenAPI {
 	return c.api
 }
 
-// GetPrice gets the current price for the specified cryptocurrency pair
+// GetPrice gets the price of a trading pair
 func (c *Client) GetPrice(pair string) (float64, error) {
-	ticker, err := c.api.Ticker(pair)
-	if err != nil {
-		return 0, err
+	const maxRetries = 3
+
+	for i := 0; i < maxRetries; i++ {
+		fmt.Println("----------------- 000.32")
+
+		// 检查 API 客户端是否初始化
+		if c.api == nil {
+			return 0, fmt.Errorf("Kraken API client is not initialized")
+		}
+
+		// 调用 Ticker 方法
+		ticker, err := c.api.Ticker(pair)
+		if err != nil {
+			fmt.Printf("Retry %d: failed to fetch ticker for pair %s: %v\n", i+1, pair, err)
+			time.Sleep(time.Duration(i+1) * 500 * time.Millisecond)
+			continue
+		}
+		if ticker == nil {
+			fmt.Printf("Retry %d: ticker response is nil for pair %s\n", i+1, pair)
+			time.Sleep(time.Duration(i+1) * 500 * time.Millisecond)
+			continue
+		}
+
+		fmt.Println("----------------- 000.33")
+		fmt.Printf("Ticker response: %+v\n", ticker)
+
+		// 获取交易对信息（GetPairTickerInfo 只返回 1 个值）
+		pairInfo := ticker.GetPairTickerInfo(pair)
+
+		// 检查 pairInfo 是否有效（通过 Close 字段判断）
+		if len(pairInfo.Close) == 0 {
+			fmt.Printf("Retry %d: ticker info is empty or pair %s not found\n", i+1, pair)
+			time.Sleep(time.Duration(i+1) * 500 * time.Millisecond)
+			continue
+		}
+
+		// 解析价格
+		priceStr := pairInfo.Close[0]
+		price, err := strconv.ParseFloat(priceStr, 64)
+		if err != nil {
+			fmt.Printf("Retry %d: failed to parse price for pair %s: %v\n", i+1, pair, err)
+			time.Sleep(time.Duration(i+1) * 500 * time.Millisecond)
+			continue
+		}
+
+		return price, nil
 	}
-	pairInfo := ticker.GetPairTickerInfo(pair)
-	if len(pairInfo.Close) == 0 {
-		return 0, errors.New("ticker not found for pair: " + pair)
-	}
-	priceStr := pairInfo.Close[0]
-	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		return 0, err
-	}
-	return price, nil
+
+	return 0, fmt.Errorf("failed to get price for pair %s after %d retries", pair, maxRetries)
 }
 
 // GetBalance gets the account balance

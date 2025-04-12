@@ -4,6 +4,7 @@ import (
 	"crypto-trading-platform/service"
 	"encoding/json"
 	"fmt"
+	"log" // 新增：用于打印日志
 	"net/http"
 	"strconv"
 
@@ -28,9 +29,44 @@ func NewHandler(userService *service.UserService, walletService *service.WalletS
 }
 
 func (h *Handler) getUserIDFromRequest(r *http.Request) (int64, error) {
-	token := r.Context().Value("jwt").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID := int64(claims["userId"].(float64))
+	// 从请求上下文中获取 JWT token
+	tokenVal := r.Context().Value("jwt")
+	if tokenVal == nil {
+		log.Printf("Error: JWT token not found in request context")
+		return 0, fmt.Errorf("jwt token not found in request context")
+	}
+
+	// 类型断言：确保 tokenVal 是 *jwt.Token 类型
+	token, ok := tokenVal.(*jwt.Token)
+	if !ok {
+		log.Printf("Error: Invalid JWT token type, got: %T", tokenVal)
+		return 0, fmt.Errorf("invalid jwt token type, got: %T", tokenVal)
+	}
+
+	// 获取 token 的 claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		log.Printf("Error: Invalid JWT claims type, got: %T", token.Claims)
+		return 0, fmt.Errorf("invalid jwt claims type, got: %T", token.Claims)
+	}
+
+	// 从 claims 中获取 userId
+	userIDVal, exists := claims["userId"]
+	if !exists {
+		log.Printf("Error: userId not found in JWT claims")
+		return 0, fmt.Errorf("userId not found in jwt claims")
+	}
+
+	// 类型断言：确保 userId 是 float64 类型（JWT 通常用 float64 表示数字）
+	userIDFloat, ok := userIDVal.(float64)
+	if !ok {
+		log.Printf("Error: Invalid userId type in JWT claims, got: %T", userIDVal)
+		return 0, fmt.Errorf("invalid userId type in jwt claims, got: %T", userIDVal)
+	}
+
+	// 转换为 int64
+	userID := int64(userIDFloat)
+	log.Printf("Successfully extracted userID: %d", userID)
 	return userID, nil
 }
 
@@ -65,16 +101,22 @@ type RegisterRequest struct {
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
+
+	print("--------------0.4\n")
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fail(w, 400, "Invalid request: "+err.Error())
 		return
 	}
 
 	userID, err := h.userService.Register(req.Username, req.Password, req.Email)
+
 	if err != nil {
 		fail(w, 500, "Registration failed: "+err.Error())
 		return
 	}
+
+	print("--------------0.5\n")
 
 	success(w, map[string]int64{"user_id": userID})
 }
@@ -103,7 +145,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserInfo(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -125,7 +167,7 @@ type UpdatePasswordRequest struct {
 func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -147,7 +189,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserWallets(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -165,8 +207,9 @@ func (h *Handler) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("----------------------   00001 ")
 
 	userID, err := h.getUserIDFromRequest(r)
+
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -188,7 +231,7 @@ func (h *Handler) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SyncWalletBalances(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -208,21 +251,33 @@ type PriceRequest struct {
 }
 
 func (h *Handler) GetPrice(w http.ResponseWriter, r *http.Request) {
+	print("----------------- 000.1")
+
 	var req PriceRequest
 	if err := httpx.ParsePath(r, &req); err != nil {
 		fail(w, 400, "Failed to parse path: "+err.Error())
 		return
 	}
+
+	print("----------------- 000.2")
+
 	if req.Pair == "" {
 		fail(w, 400, "Pair is required")
 		return
 	}
 
+	print("----------------- 000.3")
+
 	price, err := h.tradingService.GetPrice(req.Pair)
+
+	print("----------------- 000.31")
+
 	if err != nil {
-		fail(w, 500, "Failed to get price: "+err.Error())
+		fail(w, 500, "Failedddddd to get price: "+err.Error())
 		return
 	}
+
+	print("----------------- 000.4")
 
 	success(w, map[string]float64{"price": price})
 }
@@ -248,7 +303,7 @@ type PlaceOrderRequest struct {
 func (h *Handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -270,7 +325,7 @@ func (h *Handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 
@@ -286,7 +341,7 @@ func (h *Handler) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetTransactionStatus(w http.ResponseWriter, r *http.Request) {
 	_, err := h.getUserIDFromRequest(r)
 	if err != nil {
-		fail(w, 401, "Unauthorized")
+		fail(w, 401, "Unauthorized: "+err.Error())
 		return
 	}
 

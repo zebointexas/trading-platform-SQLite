@@ -6,7 +6,7 @@
     <div class="card">
       <h3>Market Price</h3>
       <input v-model="pair" placeholder="Trading Pair (e.g., BTCUSD)" />
-      <button @click="getPrice">Get Price</button>
+      <button @click="getPrice">Get Pricesss</button>
       <p>{{ priceResult }}</p>
     </div>
 
@@ -23,6 +23,15 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+// 定义后端返回的数据结构
+interface PriceResponse {
+  code: number;
+  msg: string;
+  data?: {
+    price: number;
+  };
+}
+
 export default defineComponent({
   name: 'MainView',
   setup() {
@@ -35,27 +44,55 @@ export default defineComponent({
     const getPrice = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8888/api/market/price/BTCUSD`,
+          `http://localhost:8888/api/market/price/${pair.value}`,
           {
             method: 'GET'
           }
         );
-        const data = await response.json();
-        if (response.ok) {
-          priceResult.value = `Price: ${data.price}`;
+        const data: PriceResponse = await response.json();
+
+        // 打印和显示响应数据，便于调试
+        console.log('Response data:', data);
+        alert(JSON.stringify(data));
+
+        // 检查 HTTP 状态码
+        if (!response.ok) {
+          priceResult.value = data.msg
+            ? `Failed to get price: ${data.msg}`
+            : 'Failed to get price: Unknown error';
+          return;
+        }
+
+        // 检查后端返回的状态码和消息
+        if (data.code !== 0 || data.msg !== 'success') {
+          priceResult.value = `Error: ${data.msg || 'Unknown error'}`;
+          return;
+        }
+
+        // 访问嵌套的 price 字段
+        if (data.data && typeof data.data.price === 'number') {
+          priceResult.value = `Price: ${data.data.price}`;
         } else {
-          priceResult.value = 'Failed to get price: ' + data.message;
+          priceResult.value = 'Error: Price not found in response';
         }
       } catch (err) {
-        priceResult.value = 'Error: ' + (err as Error).message;
+        priceResult.value = `Error: ${(err as Error).message}`;
       }
     };
 
     const getBalance = async () => {
       const token = localStorage.getItem('token');
+
+      
+
+      if (!token) {
+        balanceResult.value = 'Error: No token found. Please log in again.';
+        return;
+      }
+
       try {
         const response = await fetch(
-          `${import.meta.env.VUE_APP_API_BASE_URL}/api/wallet/balance/${currency.value}`,
+          `http://localhost:8888/api/wallet/balance/${currency.value}`,
           {
             method: 'GET',
             headers: {
@@ -64,6 +101,11 @@ export default defineComponent({
           }
         );
         const data = await response.json();
+
+        console.log("data:", data); 
+
+        alert(JSON.stringify(data));
+        
         if (response.ok) {
           balanceResult.value = `Balance: ${data.balance} ${currency.value}`;
         } else {
